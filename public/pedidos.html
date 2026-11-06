@@ -83,7 +83,12 @@ main{padding-block:16px 60px;display:flex;flex-direction:column;gap:14px}
 .meta b{color:var(--ink);font-weight:700}
 .pill{font-size:12px;font-weight:800;padding:3px 10px;border-radius:999px;color:var(--ink);text-transform:uppercase;letter-spacing:.04em}
 .items{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:6px}
-.items li{display:grid;grid-template-columns:1fr auto;gap:10px;background:var(--bg);border-radius:10px;padding:8px 10px}
+.items li{display:grid;grid-template-columns:64px 1fr auto;gap:10px;align-items:start;background:var(--bg);border-radius:10px;padding:8px 10px}
+.items .ph{width:64px;height:64px;border-radius:8px;object-fit:cover;background:var(--surface);border:1px solid var(--line);display:block}
+.items .ph.none{display:grid;place-items:center;color:var(--muted);font-size:11px;text-align:center}
+.refs{display:flex;gap:6px;flex-wrap:wrap;margin-top:6px}
+.refs a{display:block;width:64px;height:64px;border-radius:8px;overflow:hidden;border:1px solid var(--line);background:var(--surface)}
+.refs img{width:100%;height:100%;object-fit:cover;display:block}
 .items b{font-size:14px}
 .items small{display:block;color:var(--muted);font-size:13px;overflow-wrap:anywhere}
 .items .v{font-variant-numeric:tabular-nums;font-weight:700;white-space:nowrap}
@@ -143,6 +148,17 @@ const first=n=>String(n||"").trim().split(/\s+/)[0]||"";
 const S={get(k){try{return localStorage.getItem(k)||sessionStorage.getItem(k)||"";}catch(_){return "";}},set(k,v,keep){try{(keep?localStorage:sessionStorage).setItem(k,v);}catch(_){}},del(k){try{localStorage.removeItem(k);sessionStorage.removeItem(k);}catch(_){}}};
 
 let senha=S.get("pedidos_senha"),pedidos=[],filtro="ativos",busca="",vista="clientes";
+let fotosCat={};const refUrls={};
+async function carregarCatalogo(){try{const r=await fetch("/api/catalogo",{cache:"no-store"});if(!r.ok)return;const d=await r.json();(d.products||[]).forEach(p=>{if(p.thumb||p.photo)fotosCat[p.id]=p.thumb||p.photo;});render();}catch(_){}}
+const fotoItem=i=>i.foto?"/"+i.foto:(i.produtoId&&fotosCat[i.produtoId])?(/^data:/.test(fotosCat[i.produtoId])?fotosCat[i.produtoId]:"/"+fotosCat[i.produtoId]):"";
+const linkPedido=id=>`${location.origin}/pedido/${id}`;
+async function carregarRefs(){
+  for(const img of document.querySelectorAll("img[data-ref]")){
+    const k=img.dataset.ref;
+    if(!refUrls[k]){try{const r=await fetch("/api/pedidos?foto="+encodeURIComponent(k),{headers:{authorization:"Bearer "+senha}});if(!r.ok)continue;refUrls[k]=URL.createObjectURL(await r.blob());}catch(_){continue;}}
+    img.src=refUrls[k];img.closest("a").href=refUrls[k];
+  }
+}
 
 async function api(method,body,query){
   const r=await fetch("/api/pedidos"+(query||""),{method,headers:{"authorization":"Bearer "+senha,...(body?{"content-type":"application/json"}:{})},body:body?JSON.stringify(body):undefined,cache:"no-store"});
@@ -187,12 +203,13 @@ function render(){
   const list=visiveis();
   if(!pedidos.length){$("#lista").innerHTML=`<div class="empty"><h2>Nenhum pedido ainda</h2><p>Quando um cliente enviar um pedido pelo catálogo, ele aparece aqui com os dados e o WhatsApp.</p></div>`;return;}
   if(!list.length){$("#lista").innerHTML=`<div class="empty"><h2>Nada por aqui</h2><p>Nenhum pedido com esse filtro ou busca.</p></div>`;return;}
-  if(vista==="pedidos"){$("#lista").innerHTML=list.map(p=>`<section class="cli">${cliHead(p.cliente,[p])}${pedHTML(p)}</section>`).join("");return;}
+  if(vista==="pedidos"){$("#lista").innerHTML=list.map(p=>`<section class="cli">${cliHead(p.cliente,[p])}${pedHTML(p)}</section>`).join("");carregarRefs();return;}
   const grupos=new Map();
   list.forEach(p=>{const k=p.cliente.tel||p.cliente.nome;if(!grupos.has(k))grupos.set(k,[]);grupos.get(k).push(p);});
   $("#lista").innerHTML=[...grupos.values()].map(g=>{
     const todos=pedidos.filter(p=>(p.cliente.tel||p.cliente.nome)===(g[0].cliente.tel||g[0].cliente.nome));
     return `<section class="cli">${cliHead(g[0].cliente,todos)}${g.map(pedHTML).join("")}</section>`;}).join("");
+  carregarRefs();
 }
 function cliHead(c,todos){
   const gasto=todos.filter(p=>p.status!=="cancelado").reduce((s,p)=>s+(+p.total||0),0);
@@ -201,15 +218,16 @@ function cliHead(c,todos){
     <a class="btn btn-wa btn-sm" href="${esc(waLink(c.tel,`Olá, ${first(c.nome)}! Aqui é da Marcia Personalizados.`))}" target="_blank" rel="noopener">WhatsApp</a></div>`;
 }
 function pedHTML(p){
-  const aviso=`Olá, ${first(p.cliente.nome)}! Aqui é da Marcia Personalizados. Sobre o pedido nº ${p.id}: ${AVISO[p.status]||""}.`;
+  const aviso=`Olá, ${first(p.cliente.nome)}! Aqui é da Marcia Personalizados. Sobre o pedido nº ${p.id}: ${AVISO[p.status]||""}.\nVeja o seu pedido: ${linkPedido(p.id)}`;
   return `<article class="ped" data-id="${esc(p.id)}">
     <div class="ped-head"><span class="ped-id">Pedido ${esc(p.id)}</span><span class="pill" style="background:var(--s-${esc(p.status)})">${esc(LABEL[p.status]||p.status)}</span></div>
     <div class="meta"><span>Feito em <b>${esc(dt(p.criadoEm))}</b></span><span>Festa: <b>${p.dataEvento?esc(brDate(p.dataEvento)):"a combinar"}</b></span><span>${esc(p.entrega||"")}</span></div>
-    <ul class="items">${(p.itens||[]).map(i=>`<li><div><b>${esc(i.produto)} · ${esc(i.qtd)} ${esc(i.unidade||"un")}</b>${i.personalizacao?`<small>${esc(i.personalizacao)}</small>`:""}${i.refs?`<small>${i.refs} foto${i.refs>1?"s":""} de referência pelo WhatsApp</small>`:""}</div><span class="v">${brl(i.total)}</span></li>`).join("")}</ul>
+    <ul class="items">${(p.itens||[]).map((i,n)=>{const f=fotoItem(i),refs=(p.fotos||[]).filter(x=>x.split("-")[0]===String(n));return `<li>${f?`<img class="ph" src="${esc(f)}" alt="" loading="lazy">`:`<span class="ph none">sem foto</span>`}<div><b>${esc(i.produto)} · ${esc(i.qtd)} ${esc(i.unidade||"un")}</b>${i.personalizacao?`<small>${esc(i.personalizacao)}</small>`:""}${refs.length?`<small>Fotos de referência do cliente:</small><div class="refs">${refs.map(k=>`<a href="#" target="_blank" rel="noopener"><img data-ref="${esc(p.id+"/"+k)}" alt="Referência"></a>`).join("")}</div>`:i.refs?`<small>${i.refs} foto${i.refs>1?"s":""} de referência pelo WhatsApp</small>`:""}</div><span class="v">${brl(i.total)}</span></li>`;}).join("")}</ul>
     <div class="obs"><textarea data-obs="${esc(p.id)}" placeholder="Anotações da loja (só você vê): sinal pago, cor do laço…" aria-label="Anotações do pedido ${esc(p.id)}">${esc(p.obs||"")}</textarea></div>
     <div class="ped-foot"><span class="total">${brl(p.total)}</span>
       <div class="ctrl"><select data-st="${esc(p.id)}" aria-label="Situação do pedido ${esc(p.id)}">${STATUS.map(([k,l])=>`<option value="${k}"${p.status===k?" selected":""}>${l}</option>`).join("")}</select>
       <a class="btn btn-wa btn-sm" href="${esc(waLink(p.cliente.tel,aviso))}" target="_blank" rel="noopener">Avisar cliente</a>
+      <a class="btn btn-ghost btn-sm" href="/pedido/${esc(p.id)}" target="_blank" rel="noopener">Ver página</a>
       <button class="linkbtn" type="button" data-del="${esc(p.id)}">Excluir</button></div></div>
   </article>`;
 }
@@ -245,6 +263,7 @@ document.addEventListener("change",e=>{const d=e.target.dataset;
 });
 $("#busca").addEventListener("input",e=>{busca=e.target.value.trim();render();});
 
+carregarCatalogo();
 if(senha)carregar();else showLogin("");
 })();
 </script>

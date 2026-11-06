@@ -519,7 +519,7 @@ function buildMessage(){
   const D=V(),c=validCart(),total=c.reduce((s,i)=>s+itemTotal(i),0);
   const lines=c.map((i,n)=>{const p=D.products.find(x=>x.id===i.id),r=refsOf(i).length;return `${n+1}) ${p.name} — ${unitName(p,i.qty)} = ${brl(itemTotal(i))}\n   ${persText(i.pers)}${r?`\n   Referência: ${r} foto${r>1?"s":""} (envio em seguida)`:""}`;});
   const nr=c.reduce((s,i)=>s+refsOf(i).length,0);
-  return `Olá, ${D.store.name}! Quero fazer um pedido:\nPedido nº ${orderId}\n\n${lines.join("\n\n")}\n\nTotal estimado: ${brl(total)}\nData do evento: ${brDate($("#cData").value)||"a combinar"}\nRecebimento: ${entrega}\n${cliText()}\n${nr?`\nVou enviar ${nr} foto${nr>1?"s":""} de referência logo após esta mensagem.\n`:""}\nPedido feito pelo catálogo online.`;
+  return `Olá, ${D.store.name}! Quero fazer um pedido:\nPedido nº ${orderId}${HOSTED?`\nVer pedido com fotos: ${orderLink()}`:""}\n\n${lines.join("\n\n")}\n\nTotal estimado: ${brl(total)}\nData do evento: ${brDate($("#cData").value)||"a combinar"}\nRecebimento: ${entrega}\n${cliText()}\n${nr?`\nVou enviar ${nr} foto${nr>1?"s":""} de referência logo após esta mensagem.\n`:""}\nPedido feito pelo catálogo online.`;
 }
 function validate(){
   const D=V(),c=validCart(),total=c.reduce((s,i)=>s+itemTotal(i),0);
@@ -711,13 +711,25 @@ async function publishNow(){
 }
 
 /* Pedido salvo na loja (só no site publicado) */
+const relPath=u=>typeof u==="string"&&/^img\//.test(u);
+function orderLink(){
+  const D=V(),c=validCart(),p=c.length&&D.products.find(x=>x.id===c[0].id);
+  const f=p&&relPath(p.thumb)?p.thumb:p&&relPath(p.photo)?p.photo:"";
+  return `${location.origin}/pedido/${orderId}${f?`?f=${encodeURIComponent(f)}`:p?`?p=${encodeURIComponent(p.id)}`:""}`;
+}
 function saveOrder(){
   if(!HOSTED)return;
   const D=V(),c=validCart(),k=getCli();if(!c.length||!k)return;
   const body={id:orderId,cliente:{nome:k.nome,tel:k.tel,email:k.email||"",endereco:addrText(k)},entrega,dataEvento:$("#cData").value,
     total:c.reduce((s,i)=>s+itemTotal(i),0),
-    itens:c.map(i=>{const p=D.products.find(x=>x.id===i.id);return {produto:p.name,qtd:i.qty,unidade:unitWord(p),total:itemTotal(i),personalizacao:persText(i.pers),refs:refsOf(i).length};})};
-  try{fetch("/api/pedidos",{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify(body),keepalive:true}).catch(()=>{});}catch(_){}
+    itens:c.map(i=>{const p=D.products.find(x=>x.id===i.id);return {produto:p.name,produtoId:p.id,foto:relPath(p.thumb)?p.thumb:relPath(p.photo)?p.photo:"",qtd:i.qty,unidade:unitWord(p),total:itemTotal(i),personalizacao:persText(i.pers),refs:refsOf(i).length};})};
+  const fotos=[];c.forEach((i,n)=>refsOf(i).slice(0,3).forEach((r,k)=>{if(/^data:image\//.test(r))fotos.push({item:n,k,data:r});}));
+  const id=orderId;
+  try{
+    const ok=fetch("/api/pedidos",{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify(body),keepalive:true});
+    if(fotos.length)ok.then(r=>{if(r.ok)return fetch("/api/pedidos?fotos="+encodeURIComponent(id),{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify({fotos})});}).catch(()=>{});
+    else ok.catch(()=>{});
+  }catch(_){}
   const h=LS.get("meus_pedidos",[]);if(!h.some(x=>x.id===orderId)){h.unshift({id:orderId,em:new Date().toISOString(),total:body.total,itens:body.itens.map(i=>i.produto+" · "+i.qtd+" "+i.unidade)});LS.set("meus_pedidos",h.slice(0,30));}
 }
 
