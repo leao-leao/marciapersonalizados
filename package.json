@@ -1,0 +1,11 @@
+{
+  "name": "marciapersonalizados",
+  "private": true,
+  "type": "module",
+  "dependencies": {
+    "@netlify/blobs": "11.1.6"
+  },
+  "devDependencies": {
+    "@netlify/functions": "6.0.3"
+  }
+}

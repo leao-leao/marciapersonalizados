@@ -1,0 +1,251 @@
+<!doctype html><html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Pedidos · Marcia Personalizados</title>
+<meta name="robots" content="noindex,nofollow">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,800&family=Nunito+Sans:opsz,wght@6..12,400;6..12,600;6..12,700&display=swap">
+<style>
+:root{
+  --bg:#fbf7f9; --surface:#ffffff; --ink:#2b1630; --muted:#76607a; --line:#ecdfe8;
+  --brand:#0f766e; --brand-ink:#ffffff; --wa:#1f8a4c; --warn:#a2560b; --soft:#f4ecf1;
+  --s-novo:#ffe1ec; --s-confirmado:#e6dcff; --s-producao:#ffeab3; --s-pronto:#cdeee8; --s-entregue:#e3efe7; --s-cancelado:#ececec;
+  --display:"Bricolage Grotesque","Trebuchet MS",system-ui,sans-serif;
+  --body:"Nunito Sans","Segoe UI",system-ui,sans-serif;
+  --shadow:0 10px 30px rgba(60,20,50,.10);
+  color-scheme:light;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#1a1119; --surface:#251923; --ink:#f6e9f1; --muted:#b9a1b4; --line:#3a2a37;
+  --brand:#5eead4; --brand-ink:#0b2a27; --wa:#5fd394; --warn:#f0a95a; --soft:#2e202b;
+  --s-novo:#4a2236; --s-confirmado:#33294f; --s-producao:#47391a; --s-pronto:#1d3d39; --s-entregue:#22382b; --s-cancelado:#3a3238;
+  --shadow:0 10px 30px rgba(0,0,0,.45); color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#1a1119; --surface:#251923; --ink:#f6e9f1; --muted:#b9a1b4; --line:#3a2a37;
+  --brand:#5eead4; --brand-ink:#0b2a27; --wa:#5fd394; --warn:#f0a95a; --soft:#2e202b;
+  --s-novo:#4a2236; --s-confirmado:#33294f; --s-producao:#47391a; --s-pronto:#1d3d39; --s-entregue:#22382b; --s-cancelado:#3a3238;
+  --shadow:0 10px 30px rgba(0,0,0,.45); color-scheme:dark}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--body);font-size:15px;line-height:1.5}
+[hidden]{display:none!important}
+.wrap{max-width:1040px;margin:0 auto;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+h1,h2,h3{font-family:var(--display);margin:0;line-height:1.15;text-wrap:balance}
+button,input,select,textarea{font:inherit;color:inherit}
+:focus-visible{outline:3px solid var(--brand);outline-offset:2px}
+.hint{color:var(--muted);font-size:13px;margin:0}
+.err{color:var(--warn);font-weight:700;font-size:14px;margin:0}
+.btn{border:0;border-radius:12px;padding:10px 14px;font-weight:700;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;gap:8px;text-decoration:none;white-space:nowrap}
+.btn-primary{background:var(--brand);color:var(--brand-ink)}
+.btn-ghost{background:var(--surface);border:1px solid var(--line);color:var(--ink)}
+.btn-wa{background:var(--wa);color:#fff}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]) .btn-wa{color:#0b2416}}
+:root[data-theme="dark"] .btn-wa{color:#0b2416}
+.btn-sm{padding:7px 11px;font-size:13px;border-radius:10px}
+.linkbtn{background:none;border:0;color:var(--warn);cursor:pointer;font-size:13px;font-weight:700;padding:0}
+input[type=text],input[type=password],input[type=search],select,textarea{border:1px solid var(--line);background:var(--bg);border-radius:10px;padding:10px 12px;width:100%;min-width:0}
+label{display:flex;flex-direction:column;gap:4px;font-weight:600;font-size:14px}
+
+/* Entrada */
+.login{min-height:100dvh;display:grid;place-items:center;padding:24px 16px}
+.login form{background:var(--surface);border:1px solid var(--line);border-radius:20px;padding:24px;width:min(400px,100%);display:flex;flex-direction:column;gap:14px;box-shadow:var(--shadow)}
+.login h1{font-size:26px}
+.check{flex-direction:row;align-items:center;gap:8px;font-weight:600}
+
+/* Topo */
+.top{padding-block:24px 12px;display:flex;flex-wrap:wrap;gap:12px;justify-content:space-between;align-items:end}
+.top h1{font-size:clamp(26px,4vw,36px);font-weight:800}
+.top .acts{display:flex;gap:8px;flex-wrap:wrap}
+.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:10px;margin-bottom:14px}
+.stat{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:12px 14px}
+.stat b{display:block;font-family:var(--display);font-size:24px;font-variant-numeric:tabular-nums}
+.stat span{color:var(--muted);font-size:13px}
+.bar{position:sticky;top:0;z-index:5;background:var(--bg);border-bottom:1px solid var(--line);padding-block:10px}
+.bar .wrap>*{min-width:0}
+.chips{display:flex;gap:6px;overflow-x:auto;scrollbar-width:none;padding-bottom:2px}
+.chip{white-space:nowrap;border:1px solid var(--line);background:var(--surface);padding:6px 12px;border-radius:999px;cursor:pointer;font-weight:600;font-size:14px}
+.chip[aria-pressed="true"]{background:var(--ink);color:var(--bg);border-color:var(--ink)}
+.chip .n{opacity:.7;font-variant-numeric:tabular-nums}
+.row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.row input[type=search]{flex:1 1 220px}
+.seg{display:inline-flex;border:1px solid var(--line);border-radius:10px;overflow:hidden;background:var(--surface)}
+.seg button{border:0;background:none;padding:8px 12px;cursor:pointer;font-weight:700;font-size:13px;color:var(--muted)}
+.seg button[aria-pressed="true"]{background:var(--soft);color:var(--ink)}
+
+/* Lista */
+main{padding-block:16px 60px;display:flex;flex-direction:column;gap:14px}
+.cli{background:var(--surface);border:1px solid var(--line);border-radius:18px;overflow:hidden}
+.cli-head{display:flex;flex-wrap:wrap;gap:10px 16px;justify-content:space-between;align-items:flex-start;padding:16px 16px 12px}
+.cli-head h2{font-size:20px}
+.cli-head p{margin:2px 0 0;color:var(--muted);font-size:14px;overflow-wrap:anywhere}
+.cli-sum{font-size:13px;color:var(--muted);font-variant-numeric:tabular-nums}
+.ped{border-top:1px solid var(--line);padding:14px 16px;display:flex;flex-direction:column;gap:10px}
+.ped-head{display:flex;flex-wrap:wrap;gap:8px 14px;align-items:center;justify-content:space-between}
+.ped-id{font-family:var(--display);font-weight:800;font-size:16px}
+.meta{display:flex;flex-wrap:wrap;gap:6px 14px;font-size:13px;color:var(--muted)}
+.meta b{color:var(--ink);font-weight:700}
+.pill{font-size:12px;font-weight:800;padding:3px 10px;border-radius:999px;color:var(--ink);text-transform:uppercase;letter-spacing:.04em}
+.items{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:6px}
+.items li{display:grid;grid-template-columns:1fr auto;gap:10px;background:var(--bg);border-radius:10px;padding:8px 10px}
+.items b{font-size:14px}
+.items small{display:block;color:var(--muted);font-size:13px;overflow-wrap:anywhere}
+.items .v{font-variant-numeric:tabular-nums;font-weight:700;white-space:nowrap}
+.ped-foot{display:flex;flex-wrap:wrap;gap:8px;align-items:center;justify-content:space-between}
+.ped-foot .total{font-family:var(--display);font-size:20px;font-variant-numeric:tabular-nums}
+.ctrl{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.ctrl select{width:auto}
+.obs{display:flex;gap:8px;align-items:flex-start}
+.obs textarea{min-height:40px;resize:vertical;font-size:14px}
+.saved{color:var(--wa);font-size:12px;font-weight:700}
+.empty{background:var(--surface);border:1px dashed var(--line);border-radius:18px;padding:36px 16px;text-align:center;color:var(--muted)}
+.empty h2{color:var(--ink);font-size:20px;margin-bottom:6px}
+@media (max-width:560px){.ped-foot{flex-direction:column;align-items:stretch}.ctrl{justify-content:space-between}}
+</style></head><body>
+
+<section class="login" id="login" hidden>
+  <form id="loginForm">
+    <div><p class="hint">Marcia Personalizados</p><h1>Pedidos da loja</h1></div>
+    <label for="senha">Senha do painel<input id="senha" type="password" autocomplete="current-password" required></label>
+    <label class="check" for="lembrar"><input id="lembrar" type="checkbox" checked>Lembrar neste aparelho</label>
+    <p class="err" id="loginErr" hidden></p>
+    <button class="btn btn-primary" type="submit" id="loginBtn">Entrar</button>
+  </form>
+</section>
+
+<div id="app" hidden>
+  <header class="wrap top">
+    <div><p class="hint">Marcia Personalizados</p><h1>Pedidos</h1></div>
+    <div class="acts"><button class="btn btn-ghost btn-sm" type="button" id="btnRefresh">Atualizar</button><a class="btn btn-ghost btn-sm" href="/">Ver catálogo</a><button class="btn btn-ghost btn-sm" type="button" id="btnSair">Sair</button></div>
+  </header>
+  <div class="wrap stats" id="stats"></div>
+  <div class="bar"><div class="wrap" style="display:flex;flex-direction:column;gap:10px">
+    <div class="chips" id="chips" role="group" aria-label="Filtrar por situação"></div>
+    <div class="row">
+      <input type="search" id="busca" placeholder="Buscar por nome, telefone ou nº do pedido" aria-label="Buscar">
+      <div class="seg" role="group" aria-label="Organizar"><button type="button" data-view="clientes" aria-pressed="true">Por cliente</button><button type="button" data-view="pedidos" aria-pressed="false">Por pedido</button></div>
+    </div>
+  </div></div>
+  <main class="wrap" id="lista"></main>
+</div>
+
+<script>
+(function(){
+"use strict";
+const STATUS=[["novo","Novo"],["confirmado","Confirmado"],["producao","Em produção"],["pronto","Pronto"],["entregue","Entregue"],["cancelado","Cancelado"]];
+const LABEL=Object.fromEntries(STATUS);
+const AVISO={novo:"recebemos o seu pedido e já vamos conferir os detalhes",confirmado:"seu pedido foi confirmado e entrou na nossa fila",producao:"seu pedido está em produção",pronto:"seu pedido está pronto",entregue:"seu pedido foi entregue. Obrigada pela preferência!",cancelado:"seu pedido foi cancelado"};
+const $=s=>document.querySelector(s);
+const esc=s=>String(s==null?"":s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const brl=v=>(+v||0).toLocaleString("pt-BR",{style:"currency",currency:"BRL"});
+const brDate=s=>s?s.split("-").reverse().join("/"):"";
+const dt=s=>{try{return new Date(s).toLocaleString("pt-BR",{day:"2-digit",month:"2-digit",year:"numeric",hour:"2-digit",minute:"2-digit"});}catch(_){return "";}};
+const fmtTel=t=>{const n=String(t||"").replace(/\D/g,"");if(n.length===11)return `(${n.slice(0,2)}) ${n.slice(2,7)}-${n.slice(7)}`;if(n.length===10)return `(${n.slice(0,2)}) ${n.slice(2,6)}-${n.slice(6)}`;return t||"";};
+const waNum=t=>{const n=String(t||"").replace(/\D/g,"");return n.length<=11?"55"+n:n;};
+const waLink=(t,msg)=>`https://wa.me/${waNum(t)}${msg?`?text=${encodeURIComponent(msg)}`:""}`;
+const first=n=>String(n||"").trim().split(/\s+/)[0]||"";
+const S={get(k){try{return localStorage.getItem(k)||sessionStorage.getItem(k)||"";}catch(_){return "";}},set(k,v,keep){try{(keep?localStorage:sessionStorage).setItem(k,v);}catch(_){}},del(k){try{localStorage.removeItem(k);sessionStorage.removeItem(k);}catch(_){}}};
+
+let senha=S.get("pedidos_senha"),pedidos=[],filtro="ativos",busca="",vista="clientes";
+
+async function api(method,body,query){
+  const r=await fetch("/api/pedidos"+(query||""),{method,headers:{"authorization":"Bearer "+senha,...(body?{"content-type":"application/json"}:{})},body:body?JSON.stringify(body):undefined,cache:"no-store"});
+  let d={};try{d=await r.json();}catch(_){}
+  if(!r.ok){const e=new Error(d.erro||"Não foi possível falar com o servidor.");e.status=r.status;throw e;}
+  return d;
+}
+
+function showLogin(msg){
+  $("#app").hidden=true;$("#login").hidden=false;
+  const e=$("#loginErr");e.hidden=!msg;e.textContent=msg||"";
+  $("#senha").focus();
+}
+async function carregar(){
+  const btn=$("#btnRefresh");if(btn){btn.disabled=true;btn.textContent="Atualizando…";}
+  try{
+    const d=await api("GET");pedidos=d.pedidos||[];
+    $("#login").hidden=true;$("#app").hidden=false;render();
+  }catch(e){
+    if(e.status===401){S.del("pedidos_senha");showLogin(senha?"Senha incorreta.":"");}
+    else if(!$("#app").hidden){$("#lista").insertAdjacentHTML("afterbegin",`<p class="err">${esc(e.message)}</p>`);}
+    else showLogin(e.message);
+  }finally{if(btn){btn.disabled=false;btn.textContent="Atualizar";}}
+}
+
+const ativo=p=>p.status!=="entregue"&&p.status!=="cancelado";
+function visiveis(){
+  const q=busca.toLowerCase(),qd=busca.replace(/\D/g,"");
+  return pedidos.filter(p=>(filtro==="todos"||(filtro==="ativos"?ativo(p):p.status===filtro))
+    &&(!q||(p.cliente.nome||"").toLowerCase().includes(q)||p.id.toLowerCase().includes(q)||(qd.length>=3&&(p.cliente.tel||"").includes(qd))));
+}
+function render(){
+  const ab=pedidos.filter(ativo);
+  const hoje=new Date().toISOString().slice(0,10);
+  const prox=ab.filter(p=>p.dataEvento&&p.dataEvento>=hoje).sort((a,b)=>a.dataEvento.localeCompare(b.dataEvento))[0];
+  $("#stats").innerHTML=`<div class="stat"><b>${pedidos.filter(p=>p.status==="novo").length}</b><span>novos para conferir</span></div>
+    <div class="stat"><b>${ab.length}</b><span>em andamento</span></div>
+    <div class="stat"><b>${brl(ab.reduce((s,p)=>s+(+p.total||0),0))}</b><span>em pedidos em andamento</span></div>
+    <div class="stat"><b>${prox?esc(brDate(prox.dataEvento)):"—"}</b><span>${prox?"próxima festa: "+esc(first(prox.cliente.nome)):"nenhuma festa marcada"}</span></div>`;
+  const cnt=k=>k==="todos"?pedidos.length:k==="ativos"?ab.length:pedidos.filter(p=>p.status===k).length;
+  $("#chips").innerHTML=[["ativos","Em andamento"],["todos","Todos"],...STATUS].map(([k,l])=>`<button class="chip" type="button" data-f="${k}" aria-pressed="${filtro===k}">${esc(l)} <span class="n">${cnt(k)}</span></button>`).join("");
+  const list=visiveis();
+  if(!pedidos.length){$("#lista").innerHTML=`<div class="empty"><h2>Nenhum pedido ainda</h2><p>Quando um cliente enviar um pedido pelo catálogo, ele aparece aqui com os dados e o WhatsApp.</p></div>`;return;}
+  if(!list.length){$("#lista").innerHTML=`<div class="empty"><h2>Nada por aqui</h2><p>Nenhum pedido com esse filtro ou busca.</p></div>`;return;}
+  if(vista==="pedidos"){$("#lista").innerHTML=list.map(p=>`<section class="cli">${cliHead(p.cliente,[p])}${pedHTML(p)}</section>`).join("");return;}
+  const grupos=new Map();
+  list.forEach(p=>{const k=p.cliente.tel||p.cliente.nome;if(!grupos.has(k))grupos.set(k,[]);grupos.get(k).push(p);});
+  $("#lista").innerHTML=[...grupos.values()].map(g=>{
+    const todos=pedidos.filter(p=>(p.cliente.tel||p.cliente.nome)===(g[0].cliente.tel||g[0].cliente.nome));
+    return `<section class="cli">${cliHead(g[0].cliente,todos)}${g.map(pedHTML).join("")}</section>`;}).join("");
+}
+function cliHead(c,todos){
+  const gasto=todos.filter(p=>p.status!=="cancelado").reduce((s,p)=>s+(+p.total||0),0);
+  return `<div class="cli-head"><div><h2>${esc(c.nome)}</h2><p>${esc(fmtTel(c.tel))}${c.email?` · ${esc(c.email)}`:""}</p>${c.endereco?`<p>${esc(c.endereco)}</p>`:""}
+    <p class="cli-sum">${todos.length} pedido${todos.length>1?"s":""} · ${brl(gasto)} no total</p></div>
+    <a class="btn btn-wa btn-sm" href="${esc(waLink(c.tel,`Olá, ${first(c.nome)}! Aqui é da Marcia Personalizados.`))}" target="_blank" rel="noopener">WhatsApp</a></div>`;
+}
+function pedHTML(p){
+  const aviso=`Olá, ${first(p.cliente.nome)}! Aqui é da Marcia Personalizados. Sobre o pedido nº ${p.id}: ${AVISO[p.status]||""}.`;
+  return `<article class="ped" data-id="${esc(p.id)}">
+    <div class="ped-head"><span class="ped-id">Pedido ${esc(p.id)}</span><span class="pill" style="background:var(--s-${esc(p.status)})">${esc(LABEL[p.status]||p.status)}</span></div>
+    <div class="meta"><span>Feito em <b>${esc(dt(p.criadoEm))}</b></span><span>Festa: <b>${p.dataEvento?esc(brDate(p.dataEvento)):"a combinar"}</b></span><span>${esc(p.entrega||"")}</span></div>
+    <ul class="items">${(p.itens||[]).map(i=>`<li><div><b>${esc(i.produto)} · ${esc(i.qtd)} ${esc(i.unidade||"un")}</b>${i.personalizacao?`<small>${esc(i.personalizacao)}</small>`:""}${i.refs?`<small>${i.refs} foto${i.refs>1?"s":""} de referência pelo WhatsApp</small>`:""}</div><span class="v">${brl(i.total)}</span></li>`).join("")}</ul>
+    <div class="obs"><textarea data-obs="${esc(p.id)}" placeholder="Anotações da loja (só você vê): sinal pago, cor do laço…" aria-label="Anotações do pedido ${esc(p.id)}">${esc(p.obs||"")}</textarea></div>
+    <div class="ped-foot"><span class="total">${brl(p.total)}</span>
+      <div class="ctrl"><select data-st="${esc(p.id)}" aria-label="Situação do pedido ${esc(p.id)}">${STATUS.map(([k,l])=>`<option value="${k}"${p.status===k?" selected":""}>${l}</option>`).join("")}</select>
+      <a class="btn btn-wa btn-sm" href="${esc(waLink(p.cliente.tel,aviso))}" target="_blank" rel="noopener">Avisar cliente</a>
+      <button class="linkbtn" type="button" data-del="${esc(p.id)}">Excluir</button></div></div>
+  </article>`;
+}
+
+async function salvar(id,patch,el){
+  try{
+    const d=await api("PATCH",{id,...patch});
+    const i=pedidos.findIndex(p=>p.id===id);if(i>=0)pedidos[i]=d.pedido;
+    if(patch.status!==undefined)render();
+    else if(el){const s=document.createElement("span");s.className="saved";s.textContent="Salvo";el.after(s);setTimeout(()=>s.remove(),1500);}
+  }catch(e){if(e.status===401){S.del("pedidos_senha");showLogin("Sua sessão expirou. Entre de novo.");}else alert(e.message);}
+}
+
+$("#loginForm").addEventListener("submit",async e=>{
+  e.preventDefault();senha=$("#senha").value;
+  $("#loginBtn").disabled=true;
+  try{await api("GET");S.set("pedidos_senha",senha,$("#lembrar").checked);await carregar();}
+  catch(err){showLogin(err.status===401?"Senha incorreta.":err.message);}
+  finally{$("#loginBtn").disabled=false;}
+});
+document.addEventListener("click",async e=>{
+  const t=e.target.closest("button");if(!t)return;const d=t.dataset;
+  if(d.f){filtro=d.f;render();return;}
+  if(d.view){vista=d.view;document.querySelectorAll("[data-view]").forEach(b=>b.setAttribute("aria-pressed",b===t));render();return;}
+  if(d.del){if(!confirm(`Excluir o pedido ${d.del}? Essa ação não pode ser desfeita.`))return;
+    try{await api("DELETE",null,"?id="+encodeURIComponent(d.del));pedidos=pedidos.filter(p=>p.id!==d.del);render();}catch(err){alert(err.message);}return;}
+  if(t.id==="btnRefresh"){carregar();return;}
+  if(t.id==="btnSair"){S.del("pedidos_senha");senha="";pedidos=[];$("#senha").value="";showLogin("");}
+});
+document.addEventListener("change",e=>{const d=e.target.dataset;
+  if(d.st)salvar(d.st,{status:e.target.value});
+  if(d.obs!==undefined&&d.obs)salvar(d.obs,{obs:e.target.value},e.target);
+});
+$("#busca").addEventListener("input",e=>{busca=e.target.value.trim();render();});
+
+if(senha)carregar();else showLogin("");
+})();
+</script>
+</body></html>
