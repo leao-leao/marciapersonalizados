@@ -1,31 +1,18 @@
 // Pedidos do catálogo: o catálogo grava (POST) e a página /pedidos lista e atualiza (GET, PATCH, DELETE).
 import { getStore } from "@netlify/blobs";
 import type { Config } from "@netlify/functions";
+import { isOwner, json } from "../lib/auth.mts";
 
 const STATUS = ["novo", "confirmado", "producao", "pronto", "entregue", "cancelado"];
 const ID_RE = /^MP\d{6}-[A-Z0-9]{4}$/;
 const MAX_BODY = 40_000;
 
 const store = () => getStore({ name: "pedidos", consistency: "strong" });
-const json = (data: unknown, status = 200) =>
-  Response.json(data, { status, headers: { "cache-control": "no-store" } });
 const txt = (v: unknown, max: number) => String(v ?? "").trim().slice(0, max);
 const num = (v: unknown) => {
   const n = Math.round(Number(v) * 100) / 100;
   return Number.isFinite(n) && n >= 0 && n < 1_000_000 ? n : 0;
 };
-
-function sameText(a: string, b: string) {
-  if (a.length !== b.length) return false;
-  let diff = 0;
-  for (let i = 0; i < a.length; i++) diff |= a.charCodeAt(i) ^ b.charCodeAt(i);
-  return diff === 0;
-}
-function isOwner(req: Request) {
-  const senha = Netlify.env.get("PAINEL_SENHA");
-  if (!senha) return false;
-  return sameText(req.headers.get("authorization") || "", `Bearer ${senha}`);
-}
 
 async function readBody(req: Request) {
   const raw = await req.text();

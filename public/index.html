@@ -237,7 +237,11 @@ function hash(s){let h=5381;for(let i=0;i<s.length;i++)h=((h<<5)+h+s.charCodeAt(
 /* ===== Estado ===== */
 let DATA;
 try{DATA=JSON.parse(document.getElementById("loja-dados").textContent);}catch(e){DATA={store:{name:"Minha loja",tagline:"",city:"",whatsapp:"",production:"",minDays:7,minOrder:0,accent:"berry"},temas:[],cats:[],products:[]};}
-const BASE_HASH=hash(JSON.stringify(DATA));
+let BASE_HASH=hash(JSON.stringify(DATA));
+const SENHA_KEY="pedidos_senha";
+const getSenha=()=>{try{return localStorage.getItem(SENHA_KEY)||sessionStorage.getItem(SENHA_KEY)||"";}catch(_){return "";}};
+const setSenha=(v,keep)=>{try{if(v)(keep?localStorage:sessionStorage).setItem(SENHA_KEY,v);else{localStorage.removeItem(SENHA_KEY);sessionStorage.removeItem(SENHA_KEY);}}catch(_){}};
+async function senhaOk(v){try{const r=await fetch("/api/catalogo?verificar=1",{headers:{authorization:"Bearer "+v},cache:"no-store"});return r.ok;}catch(_){return false;}}
 let isEditor=false, accessChecked=false, artifactNs=null;
 let draft=null, dirty=false, draftTimer=null, publishing=false, pubMsg="", pubKind="";
 let cat="todos", query="", current=null, currentQty=0, entrega="Retirada";
@@ -522,10 +526,14 @@ function refreshSend(){
 /* ================= PAINEL ================= */
 function panelHTML(){
   if(!accessChecked)return `<div class="wrap locked"><p class="hint">Verificando seu acesso ao painel…</p></div>`;
+  if(!isEditor&&HOSTED)return `<div class="wrap locked" style="padding-block:40px;max-width:420px"><form id="formLogin" class="box" novalidate><p class="section-label">Painel da loja</p><h1 style="font-size:26px">Entrar</h1>
+    <label for="lSenha">Senha do painel<input id="lSenha" type="password" autocomplete="current-password" style="border:1px solid var(--line);background:var(--bg);border-radius:10px;padding:10px 12px"></label>
+    <label class="check" for="lKeep"><input id="lKeep" type="checkbox" checked>Lembrar neste aparelho</label>
+    <p class="err" id="lErr" hidden></p><button class="btn btn-primary" type="submit" id="lBtn">Entrar</button><a class="hint" href="#">Voltar ao catálogo</a></form></div>`;
   if(!isEditor)return `<div class="wrap locked"><h1>Painel da loja</h1><p class="hint">Só quem administra a loja pode abrir o painel. Entre com a conta dona deste catálogo pelo claude.ai.</p><a class="btn btn-primary" href="#">Ver o catálogo</a></div>`;
   const D=draft;
   return `<header class="wrap phead"><div><p class="section-label">Painel da loja</p><h1>${esc(D.store.name)}</h1></div>
-    <div style="display:flex;gap:8px;flex-wrap:wrap">${HOSTED?`<a class="btn btn-ghost" href="/pedidos">Pedidos</a>`:""}<a class="btn btn-ghost" href="#">Ver vitrine${dirty?" (prévia)":""}</a></div></header>
+    <div style="display:flex;gap:8px;flex-wrap:wrap">${HOSTED?`<a class="btn btn-ghost" href="/pedidos">Pedidos</a><button class="btn btn-ghost" type="button" data-sair="1">Sair</button>`:""}<a class="btn btn-ghost" href="#">Ver vitrine${dirty?" (prévia)":""}</a></div></header>
   <div class="wrap"><div class="tabs" role="tablist">
     ${[["produtos","Produtos"],["loja","Dados da loja"],["categorias","Categorias"]].map(([k,l])=>`<button class="tab" role="tab" type="button" data-tab="${k}" aria-selected="${panelTab===k}">${l}</button>`).join("")}
   </div></div>
@@ -587,8 +595,8 @@ function catsTab(){
 }
 function updateSavebar(){
   const b=$("#savebar");if(!b)return;
-  const st=pubMsg?`<span class="${pubKind==="err"?"err":"ok"}" style="font-size:14px">${esc(pubMsg)}</span>`:dirty?`<span class="st"><span class="dot dirty"></span>${HOSTED?"Alterações prontas: baixe o arquivo e envie na hospedagem":"Alterações não publicadas"}</span>`:`<span class="st"><span class="dot"></span>${HOSTED?"Sem alterações. O site no ar está igual a este painel.":"Tudo publicado. Os clientes veem esta versão."}</span>`;
-  b.innerHTML=`${st}<div style="display:flex;gap:8px;flex-wrap:wrap">${dirty?`<button class="btn btn-ghost" type="button" data-discard="1"${publishing?" disabled":""}>Descartar</button>`:""}<button class="btn btn-primary" type="button" data-publish="1"${(!dirty&&!HOSTED)||publishing?" disabled":""}>${HOSTED?"Baixar site atualizado":publishing?"Publicando…":"Publicar alterações"}</button></div>`;
+  const st=pubMsg?`<span class="${pubKind==="err"?"err":"ok"}" style="font-size:14px">${esc(pubMsg)}</span>`:dirty?`<span class="st"><span class="dot dirty"></span>Alterações não publicadas</span>`:`<span class="st"><span class="dot"></span>Tudo publicado. Os clientes veem esta versão.</span>`;
+  b.innerHTML=`${st}<div style="display:flex;gap:8px;flex-wrap:wrap">${dirty?`<button class="btn btn-ghost" type="button" data-discard="1"${publishing?" disabled":""}>Descartar</button>`:""}<button class="btn btn-primary" type="button" data-publish="1"${!dirty||publishing?" disabled":""}>${publishing?"Publicando…":"Publicar alterações"}</button></div>`;
 }
 function markDirty(){
   dirty=true;pubMsg="";updateSavebar();
@@ -661,7 +669,7 @@ function downloadSite(){
   pubMsg="Arquivo index.html baixado. Envie na hospedagem para atualizar o site.";pubKind="ok";updateSavebar();
 }
 async function publishNow(){
-  if(HOSTED){downloadSite();return;}
+  if(HOSTED){publishHosted();return;}
   if(!artifactNs||publishing)return;
   const html=buildDoc(draft);
   if(new Blob([html]).size>MAX_BYTES){pubMsg="O catálogo passou do limite de espaço. Remova algumas fotos e tente de novo.";pubKind="err";updateSavebar();return;}
@@ -687,6 +695,24 @@ function saveOrder(){
     itens:c.map(i=>{const p=D.products.find(x=>x.id===i.id);return {produto:p.name,qtd:i.qty,unidade:unitWord(p),total:itemTotal(i),personalizacao:persText(i.pers),refs:refsOf(i).length};})};
   try{fetch("/api/pedidos",{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify(body),keepalive:true}).catch(()=>{});}catch(_){}
   const h=LS.get("meus_pedidos",[]);if(!h.some(x=>x.id===orderId)){h.unshift({id:orderId,em:new Date().toISOString(),total:body.total,itens:body.itens.map(i=>i.produto+" · "+i.qtd+" "+i.unidade)});LS.set("meus_pedidos",h.slice(0,30));}
+}
+
+async function publishHosted(){
+  if(publishing)return;
+  publishing=true;pubMsg="";updateSavebar();
+  try{
+    const r=await fetch("/api/catalogo",{method:"PUT",headers:{"content-type":"application/json",authorization:"Bearer "+getSenha()},body:JSON.stringify(draft)});
+    let d={};try{d=await r.json();}catch(_){}
+    if(r.status===401){setSenha("");isEditor=false;publishing=false;render();return;}
+    if(!r.ok)throw new Error(d.erro||"");
+    DATA=clone(draft);BASE_HASH=hash(JSON.stringify(DATA));LS.del("loja_draft");dirty=false;
+    pubMsg="Publicado! Os clientes já veem esta versão.";pubKind="ok";
+  }catch(e){pubKind="err";pubMsg=(e&&e.message)||"Não foi possível publicar agora. Confira a internet e tente de novo.";}
+  publishing=false;updateSavebar();
+}
+function startEditor(){
+  const saved=LS.get("loja_draft",null);
+  if(saved&&saved.base===BASE_HASH&&saved.draft){draft=saved.draft;dirty=true;}else{draft=clone(DATA);LS.del("loja_draft");}
 }
 
 /* ===== Eventos ===== */
@@ -732,11 +758,20 @@ document.addEventListener("click",async e=>{
   if(d.catdel){draft.cats=draft.cats.filter(c=>c.id!==d.catdel);markDirty();$("#ptab").innerHTML=catsTab();return;}
   if(d.discard){if(await ask("Descartar alterações?","Tudo o que você mudou desde a última publicação será perdido.","Descartar")){draft=clone(DATA);dirty=false;pubMsg="";LS.del("loja_draft");render();}return;}
   if(d.publish){publishNow();return;}
+  if(d.sair){setSenha("");isEditor=false;draft=null;dirty=false;location.hash="";render();return;}
 });
 document.addEventListener("submit",e=>{e.preventDefault();
   if(e.target.id==="formProd")addToCart();
   else if(e.target.id==="formEdit")saveEditor();
-  else if(e.target.id==="formCad")saveCad();});
+  else if(e.target.id==="formCad")saveCad();
+  else if(e.target.id==="formLogin")loginPanel();});
+async function loginPanel(){
+  const v=$("#lSenha").value,err=$("#lErr"),btn=$("#lBtn");
+  if(!v){err.textContent="Digite a senha.";err.hidden=false;return;}
+  btn.disabled=true;btn.textContent="Entrando…";
+  if(await senhaOk(v)){setSenha(v,$("#lKeep").checked);isEditor=true;startEditor();render();}
+  else{err.textContent="Senha incorreta.";err.hidden=false;btn.disabled=false;btn.textContent="Entrar";}
+}
 document.addEventListener("input",e=>{
   const t=e.target,d=t.dataset;
   if(t.id==="q"){query=t.value.trim().toLowerCase();renderGrid();return;}
@@ -780,12 +815,12 @@ render();
       artifactNs=a;isEditor=!!(a&&u&&await u.canEdit());
     }
   }catch(_){isEditor=false;}
-  if(HOSTED)isEditor=true;
-  accessChecked=true;
-  if(isEditor){
-    const saved=LS.get("loja_draft",null);
-    if(saved&&saved.base===BASE_HASH&&saved.draft){draft=saved.draft;dirty=true;}else{draft=clone(DATA);LS.del("loja_draft");}
+  if(HOSTED){
+    try{const r=await fetch("/api/catalogo",{cache:"no-store"});if(r.ok){const d=await r.json();if(d&&Array.isArray(d.products)){DATA=d;BASE_HASH=hash(JSON.stringify(DATA));}}}catch(_){}
+    const sv=getSenha();isEditor=!!(sv&&await senhaOk(sv));if(sv&&!isEditor)setSenha("");
   }
+  accessChecked=true;
+  if(isEditor)startEditor();
   render();
 })();
 })();
